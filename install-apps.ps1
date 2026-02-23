@@ -44,7 +44,6 @@ foreach ($app in $apps) {
     $output = winget install `
         --id $app.Id `
         --source winget `
-        --silent `
         --accept-package-agreements `
         --accept-source-agreements `
         2>&1 | Out-String
