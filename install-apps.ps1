@@ -33,25 +33,26 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
+# Actualizar solo la fuente winget (rapido, sin msstore)
+Write-Info "Actualizando fuente winget..."
+winget source update --name winget 2>&1 | Out-Null
+
 $ok      = 0
 $skipped = 0
 $fails   = @()
 
 foreach ($app in $apps) {
-    # Verificar si ya esta instalada
-    $installed = winget list --id $app.Id --source winget 2>&1 | Select-String $app.Id
-    if ($installed) {
-        Write-Skip "$($app.Name) ya instalado, omitiendo"
-        $skipped++
-        continue
-    }
-
     Write-Info "Instalando $($app.Name)..."
-    winget install --id $app.Id --source winget --silent --accept-package-agreements --accept-source-agreements 2>&1 | Out-Null
 
+    $output = winget install --id $app.Id --source winget --silent --accept-package-agreements --accept-source-agreements 2>&1
+
+    # 0 = exito | -1978335189 = ya instalado (No applicable update found)
     if ($LASTEXITCODE -eq 0) {
         Write-OK "$($app.Name)"
         $ok++
+    } elseif ($LASTEXITCODE -eq -1978335189 -or ($output | Select-String "already installed")) {
+        Write-Skip "$($app.Name) ya estaba instalado"
+        $skipped++
     } else {
         Write-Fail "$($app.Name) (codigo: $LASTEXITCODE)"
         $fails += $app.Name
