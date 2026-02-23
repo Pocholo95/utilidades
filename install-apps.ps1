@@ -1,7 +1,7 @@
 # ============================================================
 #  install-apps.ps1
 #  Instalador rapido de aplicaciones via winget
-#  Uso: iwr -useb https://raw.githubusercontent.com/TU_USUARIO/TU_REPO/main/install-apps.ps1 | iex
+#  Uso: iwr -useb https://raw.githubusercontent.com/Pocholo95/utilidades/refs/heads/main/install-apps.ps1 | iex
 # ============================================================
 
 $apps = @(
@@ -20,6 +20,7 @@ $apps = @(
 function Write-OK   { param($msg) Write-Host "  [OK] $msg"    -ForegroundColor Green  }
 function Write-Fail { param($msg) Write-Host "  [!!] $msg"    -ForegroundColor Red    }
 function Write-Info { param($msg) Write-Host "  [..] $msg"    -ForegroundColor Cyan   }
+function Write-Skip { param($msg) Write-Host "  [--] $msg"    -ForegroundColor Yellow }
 
 # ── Verificar winget ─────────────────────────────────────────
 Write-Host "`n================================================" -ForegroundColor Yellow
@@ -32,15 +33,23 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
-$ok    = 0
-$fails = @()
+$ok      = 0
+$skipped = 0
+$fails   = @()
 
 foreach ($app in $apps) {
-    Write-Info "Instalando $($app.Name)..."
-    winget install --id $app.Id --silent --accept-package-agreements --accept-source-agreements 2>&1 | Out-Null
+    # Verificar si ya esta instalada
+    $installed = winget list --id $app.Id --source winget 2>&1 | Select-String $app.Id
+    if ($installed) {
+        Write-Skip "$($app.Name) ya instalado, omitiendo"
+        $skipped++
+        continue
+    }
 
-    if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq -1978335189) {
-        # -1978335189 = ya estaba instalado (WINGET_INSTALLED_STATUS_ALREADY_INSTALLED)
+    Write-Info "Instalando $($app.Name)..."
+    winget install --id $app.Id --source winget --silent --accept-package-agreements --accept-source-agreements 2>&1 | Out-Null
+
+    if ($LASTEXITCODE -eq 0) {
         Write-OK "$($app.Name)"
         $ok++
     } else {
@@ -51,7 +60,7 @@ foreach ($app in $apps) {
 
 # ── Resumen ──────────────────────────────────────────────────
 Write-Host "`n------------------------------------------------" -ForegroundColor Yellow
-Write-Host "  Resultado: $ok/$($apps.Count) apps instaladas" -ForegroundColor Yellow
+Write-Host "  Instaladas: $ok | Omitidas: $skipped | Fallaron: $($fails.Count)" -ForegroundColor Yellow
 if ($fails.Count -gt 0) {
     Write-Host "  Fallaron: $($fails -join ', ')" -ForegroundColor Red
 }
