@@ -12,7 +12,8 @@ $apps = @(
     @{ Name = "Elgato Stream Deck"; Id = "Elgato.StreamDeck"       },
     @{ Name = "Revo Uninstaller";   Id = "VS.RevoUninstaller"      },
     @{ Name = "VLC";                Id = "VideoLAN.VLC"            },
-    @{ Name = "FFmpeg";             Id = "Gyan.FFmpeg"             }
+    @{ Name = "FFmpeg";             Id = "Gyan.FFmpeg"             },
+    @{ Name = "Discord";            Id = "Discord.Discord"         }
 )
 
 # ── Colores helpers ──────────────────────────────────────────
